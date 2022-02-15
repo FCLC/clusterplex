@@ -1,14 +1,16 @@
-FROM linuxserver/plex:arm32v7-latest
+FROM linuxserver/plex:latest
 
 LABEL maintainer="pabloromeo"
 
-COPY qemu-arm-static /usr/bin/
-
 RUN echo "**** install runtime packages ****" && \
-    curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
+    echo "**** apt-get update ****" && \
     apt-get update && \
-    echo "**** install Node.js ****" && \
-    apt-get install -y nodejs && \
+    echo "**** install binutils ****" && \
+    apt-get install -y libatomic1 && \
+    echo "**** install 'n' ****" && \
+    curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
+    echo "**** install nodejs ****" && \
+    bash n lts && \
     echo "**** cleanup ****" && \
     rm -rf \
         /tmp/* \
@@ -18,14 +20,14 @@ RUN echo "**** install runtime packages ****" && \
 RUN echo "**** Rename Plex's transcoder ****" && \
     mv /usr/lib/plexmediaserver/'Plex Transcoder' /usr/lib/plexmediaserver/originalTranscoder
 
-COPY ["transcoder-shim.sh", "/usr/lib/plexmediaserver/Plex Transcoder"]
+COPY ["/app/transcoder-shim.sh", "/usr/lib/plexmediaserver/Plex Transcoder"]
 
 RUN chmod +x /usr/lib/plexmediaserver/'Plex Transcoder'
 
 WORKDIR /app
-COPY package*.json ./
+COPY /app/package*.json ./
 RUN npm install
 
-COPY . .
+COPY /app .
 
 WORKDIR /
